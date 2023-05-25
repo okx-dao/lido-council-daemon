@@ -162,10 +162,10 @@ export class GuardianService implements OnModuleInit {
       return;
     }
 
-    const nextKeysIntersections = this.getNextKeysIntersections(blockData);
+    // const nextKeysIntersections = this.getNextKeysIntersections(blockData);
     const cachedKeysIntersections = this.getCachedKeysIntersections(blockData);
-    const intersections = nextKeysIntersections.concat(cachedKeysIntersections);
-    const isIntersectionsFound = intersections.length > 0;
+    // const intersections = nextKeysIntersections.concat(cachedKeysIntersections);
+    const isIntersectionsFound = cachedKeysIntersections.length > 0;
 
     if (isIntersectionsFound) {
       await this.handleKeysIntersections(blockData);
@@ -213,7 +213,7 @@ export class GuardianService implements OnModuleInit {
     const cache = blockData.nodeOperatorsCache;
 
     const isSameKeysOpIndex = cache.keysOpIndex === keysOpIndex;
-    const isSameDepositRoot = cache.depositRoot === depositRoot;
+    const isSameDepositRoot = true;
     const isCacheUpToDate = isSameKeysOpIndex && isSameDepositRoot;
 
     // Skip checking until the next cache update
@@ -272,7 +272,7 @@ export class GuardianService implements OnModuleInit {
 
     // call without waiting for completion
     this.securityService
-      .pauseDeposits(blockNumber, signature)
+      .pauseAKeyDeposits(blockData.keysOpIndex, signature)
       .catch((error) => this.logger.error(error));
 
     this.logger.warn('Suspicious case detected');
@@ -306,8 +306,7 @@ export class GuardianService implements OnModuleInit {
     if (isSameContractsState) return;
 
     const signature = await this.securityService.signDepositData(
-      depositRoot,
-      keysOpIndex,
+      [keysOpIndex],
       blockNumber,
       blockHash,
     );

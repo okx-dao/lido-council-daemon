@@ -6,7 +6,12 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
-import { RegistryAbi, RegistryAbi__factory } from 'generated';
+import {
+  DepositNodeOperatorAbi,
+  DepositNodeOperatorAbi__factory,
+  RegistryAbi,
+  RegistryAbi__factory,
+} from 'generated';
 import { ProviderService } from 'provider';
 import { SecurityService } from 'contracts/security';
 import { DepositService } from 'contracts/deposit';
@@ -44,6 +49,7 @@ export class RegistryService implements OnModuleInit {
   }
 
   private cachedContract: RegistryAbi | null = null;
+  private cachedDepositContract: DepositNodeOperatorAbi | null = null;
   private cachedBatchContracts: Map<string, Promise<RegistryAbi>> = new Map();
   private cachedPubKeyLength: number | null = null;
 
@@ -88,6 +94,22 @@ export class RegistryService implements OnModuleInit {
     }
 
     return this.cachedContract;
+  }
+
+  /**
+   * Returns an instance of the contract
+   */
+  public async getValidatorKeyContract(): Promise<DepositNodeOperatorAbi> {
+    if (!this.cachedDepositContract) {
+      const address = await this.getRegistryAddress();
+      const provider = this.providerService.provider;
+      this.cachedDepositContract = DepositNodeOperatorAbi__factory.connect(
+        address,
+        provider,
+      );
+    }
+
+    return this.cachedDepositContract;
   }
 
   /**
@@ -142,19 +164,23 @@ export class RegistryService implements OnModuleInit {
   public async getNextSigningKeys(blockTag?: BlockTag) {
     const [contract, maxDepositKeys, lidoAddress, pubkeyLength] =
       await Promise.all([
-        this.getContract(),
+        this.getValidatorKeyContract(),
         this.securityService.getMaxDeposits(blockTag),
         this.securityService.getLidoContractAddress(),
         this.getPubkeyLength(),
       ]);
 
-    const overrides = { blockTag, from: lidoAddress };
-    const [pubKeys] = await contract.callStatic.assignNextSigningKeys(
-      maxDepositKeys,
-      overrides,
+    const { pubkeys, statuses } = await contract.callStatic.getNodeValidators(
+      0,
+      0,
     );
-
-    const splittedKeys = splitPubKeys(pubKeys, pubkeyLength);
+    let i: string;
+    let sumString: string;
+    sumString = '';
+    for (i in pubkeys) {
+      sumString = sumString.concat(i);
+    }
+    const splittedKeys = splitPubKeys(sumString, pubkeyLength);
     return splittedKeys;
   }
 
@@ -163,10 +189,20 @@ export class RegistryService implements OnModuleInit {
    * which increases when any of the key operations are performed
    */
   public async getKeysOpIndex(blockTag?: BlockTag): Promise<number> {
-    const contract = await this.getContract();
-    const keysOpIndex = await contract.getKeysOpIndex({ blockTag });
-
-    return keysOpIndex.toNumber();
+    const contract = await this.getValidatorKeyContract();
+    const { pubkeys, statuses } = await contract.callStatic.getNodeValidators(
+      0,
+      0,
+    );
+    let num = 0;
+    let states: any;
+    for (states in statuses) {
+      if (states == 1) {
+        break;
+      }
+      num++;
+    }
+    return num;
   }
 
   /**
