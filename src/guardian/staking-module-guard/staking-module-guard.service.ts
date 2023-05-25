@@ -44,17 +44,10 @@ export class StakingModuleGuardService {
       stakingRouterModule,
     );
 
-    const isDepositsPaused = await this.securityService.isDepositsPaused(
-      stakingRouterModule.id,
-      {
-        blockHash,
-      },
-    );
 
     return {
       nonce,
       unusedKeys: keys.map((srKey) => srKey.key),
-      isDepositsPaused,
       stakingModuleId: stakingRouterModule.id,
       blockHash,
     };
@@ -65,14 +58,11 @@ export class StakingModuleGuardService {
    * @param blockData - collected data from the current block
    */
   public async checkKeysIntersections(
-    stakingModuleData: StakingModuleData,
     blockData: BlockData,
   ): Promise<void> {
     const { blockHash } = blockData;
-    const { stakingModuleId } = stakingModuleData;
 
     const keysIntersections = this.getKeysIntersections(
-      stakingModuleData,
       blockData,
     );
 
@@ -107,7 +97,6 @@ export class StakingModuleGuardService {
    * @returns list of keys that were deposited earlier
    */
   public getKeysIntersections(
-    stakingModuleData: StakingModuleData,
     blockData: BlockData,
   ): VerifiedDepositEvent[] {
     const { blockHash, depositRoot, depositedEvents } = blockData;
@@ -174,11 +163,6 @@ export class StakingModuleGuardService {
 
     const { nonce, stakingModuleId } = stakingModuleData;
 
-    const signature = await this.securityService.signPauseData(
-      blockNumber,
-      stakingModuleId,
-    );
-
     const pauseMessage = {
       depositRoot,
       nonce,
@@ -235,14 +219,6 @@ export class StakingModuleGuardService {
 
     if (isSameContractsState) return;
 
-    const signature = await this.securityService.signDepositData(
-      depositRoot,
-      nonce,
-      blockNumber,
-      blockHash,
-      stakingModuleId,
-    );
-
     const depositMessage = {
       depositRoot,
       nonce,
@@ -250,7 +226,6 @@ export class StakingModuleGuardService {
       blockHash,
       guardianAddress,
       guardianIndex,
-      signature,
       stakingModuleId,
     };
 

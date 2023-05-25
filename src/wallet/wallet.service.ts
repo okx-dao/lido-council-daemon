@@ -118,54 +118,32 @@ export class WalletService implements OnModuleInit {
   /**
    * Signs a message to deposit buffered ethers
    * @param signDepositDataParams - parameters for signing deposit message
-   * @param signDepositDataParams.prefix - unique prefix from the contract for this type of message
-   * @param signDepositDataParams.depositRoot - current deposit root from the deposit contract
-   * @param signDepositDataParams.keysOpIndex - current index of keys operations from the registry contract
-   * @param signDepositDataParams.blockNumber - current block number
-   * @param signDepositDataParams.blockHash - current block hash
-   * @param signDepositDataParams.stakingModuleId - target module id
+   * @param signDepositDataParams.indexList
    * @returns signature
    */
   public async signDepositData({
-    prefix,
-    blockNumber,
-    blockHash,
-    depositRoot,
-    keysOpIndex,
-    stakingModuleId,
+    indexList,
   }: SignDepositDataParams): Promise<Signature> {
-    const encodedData = defaultAbiCoder.encode(
-      ['bytes32', 'uint256', 'bytes32', 'bytes32', 'uint256', 'uint256'],
-      [
-        prefix,
-        blockNumber,
-        blockHash,
-        depositRoot,
-        stakingModuleId,
-        keysOpIndex,
-      ],
-    );
+    const encodedData = defaultAbiCoder.encode(['uint256[]'], [indexList]);
 
     const messageHash = keccak256(encodedData);
-    return await this.signMessage(messageHash);
+    return this.signMessage(messageHash);
   }
 
   /**
    * Signs a message to pause deposits
    * @param signPauseDataParams - parameters for signing pause message
-   * @param signPauseDataParams.prefix - unique prefix from the contract for this type of message
-   * @param signPauseDataParams.blockNumber - block number that is signed
-   * @param signPauseDataParams.stakingModuleId - target staking module id
+   * @param signPauseDataParams.index
+   * @param signPauseDataParams.slashAmount
    * @returns signature
    */
-  public async signPauseData({
-    prefix,
-    blockNumber,
-    stakingModuleId,
+  public async signSetValidatorUnsafeData({
+    index,
+    slashAmount,
   }: SignPauseDataParams): Promise<Signature> {
     const encodedData = defaultAbiCoder.encode(
-      ['bytes32', 'uint256', 'uint256'],
-      [prefix, blockNumber, stakingModuleId],
+      ['uint256', 'uint256'],
+      [index, slashAmount],
     );
 
     const messageHash = keccak256(encodedData);

@@ -45,19 +45,19 @@ describe('RepositoryService', () => {
     });
 
     it('should return contract instance', async () => {
-      const contract = await repositoryService.getCachedLidoContract();
+      const contract = await repositoryService.getCacheDawnDepositContract();
       expect(contract).toBeInstanceOf(Contract);
     });
 
     it('should call getLidoAddress once', async () => {
-      await repositoryService.getCachedLidoContract();
-      await repositoryService.getCachedLidoContract();
+      await repositoryService.getCacheDawnDepositContract();
+      await repositoryService.getCacheDawnDepositContract();
       expect(mockGetAddress).toBeCalledTimes(1);
     });
 
     it('should cache instance', async () => {
-      const contract1 = await repositoryService.getCachedLidoContract();
-      const contract2 = await repositoryService.getCachedLidoContract();
+      const contract1 = await repositoryService.getCacheDawnDepositContract();
+      const contract2 = await repositoryService.getCacheDawnDepositContract();
       expect(contract1).toEqual(contract2);
     });
   });
@@ -99,19 +99,19 @@ describe('RepositoryService', () => {
     });
 
     it('should return contract instance', async () => {
-      const contract = await repositoryService.getCachedDepositContract();
+      const contract = await repositoryService.getCachedDepositNodeOperatorContract();
       expect(contract).toBeInstanceOf(Contract);
     });
 
     it('should call getDepositAddress once', async () => {
-      await repositoryService.getCachedDepositContract();
-      await repositoryService.getCachedDepositContract();
+      await repositoryService.getCachedDepositNodeOperatorContract();
+      await repositoryService.getCachedDepositNodeOperatorContract();
       expect(mockGetAddress).toBeCalledTimes(1);
     });
 
     it('should cache instance', async () => {
-      const contract1 = await repositoryService.getCachedDepositContract();
-      const contract2 = await repositoryService.getCachedDepositContract();
+      const contract1 = await repositoryService.getCachedDepositNodeOperatorContract();
+      const contract2 = await repositoryService.getCachedDepositNodeOperatorContract();
       expect(contract1).toEqual(contract2);
     });
   });

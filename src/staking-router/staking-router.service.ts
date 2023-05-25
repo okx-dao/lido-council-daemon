@@ -1,25 +1,16 @@
 import { Injectable, LoggerService, Inject } from '@nestjs/common';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 import { Configuration } from 'common/config';
-import { KeysApiService } from 'keys-api/keys-api.service';
-import { SRModuleKeysResponse, SRModule } from 'keys-api/interfaces';
 
 @Injectable()
 export class StakingRouterService {
-  protected stakingRouterCache: Record<number, SRModuleKeysResponse> = {};
   constructor(
     @Inject(WINSTON_MODULE_NEST_PROVIDER) protected logger: LoggerService,
     protected readonly config: Configuration,
-    protected readonly keysApiService: KeysApiService,
   ) {}
-
-  public async getStakingModules() {
-    return await this.keysApiService.getModulesList();
-  }
 
   public async getStakingModuleUnusedKeys(
     blockHash: string,
-    { id, nonce }: SRModule,
   ) {
     if (!this.isNeedToUpdateState(id, nonce))
       return this.getStakingRouterKeysCache(id);

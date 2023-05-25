@@ -1,17 +1,20 @@
 import { Inject, Injectable, LoggerService } from '@nestjs/common';
-import { LidoAbi, LidoAbi__factory, LocatorAbi } from 'generated';
+import { DawnDepositAbi, DawnDepositAbi__factory, LocatorAbi } from 'generated';
 import { SecurityAbi, SecurityAbi__factory } from 'generated';
-import { DepositAbi, DepositAbi__factory } from 'generated';
+import {
+  DepositNodeOperatorAbi,
+  DepositNodeOperatorAbi__factory,
+} from 'generated';
 import { StakingRouterAbi, StakingRouterAbi__factory } from 'generated';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 import { BlockTag, ProviderService } from 'provider';
 import { sleep } from 'utils';
 import { LocatorService } from './locator/locator.service';
 import {
-  DEPOSIT_ABI,
+  DEPOSIT_NODE_OPERATOR_ABI,
   DSM_ABI,
   INIT_CONTRACTS_TIMEOUT,
-  LIDO_ABI,
+  DAWN_DEPOSIT_ABI,
   STAKING_ROUTER_ABI,
 } from './repository.constants';
 
@@ -24,12 +27,12 @@ export class RepositoryService {
   ) {}
   private tempContractsCache: Record<
     string,
-    LidoAbi | LocatorAbi | SecurityAbi | StakingRouterAbi
+    DawnDepositAbi | LocatorAbi | SecurityAbi | StakingRouterAbi
   > = {};
   // store prefixes on the current state of the contracts.
   // if the contracts are updated we will change these addresses too
   private cachedDSMPrefixes: Record<string, string> = {};
-  private permanentContractsCache: Record<string, DepositAbi> = {};
+  private permanentContractsCache: Record<string, DepositNodeOperatorAbi> = {};
 
   /**
    * Init cache for each contract
@@ -60,8 +63,8 @@ export class RepositoryService {
   /**
    * Get Lido contract impl
    */
-  public getCachedLidoContract(): LidoAbi {
-    return this.getFromCache(LIDO_ABI) as LidoAbi;
+  public getCacheDawnDepositContract(): DawnDepositAbi {
+    return this.getFromCache(DAWN_DEPOSIT_ABI) as DawnDepositAbi;
   }
 
   /**
@@ -74,8 +77,10 @@ export class RepositoryService {
   /**
    * Get Deposit contract impl
    */
-  public getCachedDepositContract(): DepositAbi {
-    return this.permanentContractsCache[DEPOSIT_ABI] as DepositAbi;
+  public getCachedDepositNodeOperatorContract(): DepositNodeOperatorAbi {
+    return this.permanentContractsCache[
+      DEPOSIT_NODE_OPERATOR_ABI
+    ] as DepositNodeOperatorAbi;
   }
 
   /**
@@ -100,7 +105,7 @@ export class RepositoryService {
   public setContractCache(
     address: string,
     contractKey: string,
-    impl: LidoAbi | LocatorAbi | SecurityAbi | StakingRouterAbi,
+    impl: DawnDepositAbi | LocatorAbi | SecurityAbi | StakingRouterAbi,
   ) {
     if (!this.tempContractsCache[contractKey]) {
       this.logger.log('Contract initial address', { address, contractKey });
@@ -119,7 +124,7 @@ export class RepositoryService {
   private setPermanentContractCache(
     address: string,
     contractKey: string,
-    impl: DepositAbi,
+    impl: DepositNodeOperatorAbi,
   ) {
     this.logger.log('Contract initial address', { address, contractKey });
     this.permanentContractsCache[contractKey] = impl;
@@ -134,8 +139,8 @@ export class RepositoryService {
 
     this.setContractCache(
       address,
-      LIDO_ABI,
-      LidoAbi__factory.connect(address, provider),
+      DAWN_DEPOSIT_ABI,
+      DawnDepositAbi__factory.connect(address, provider),
     );
   }
 
@@ -166,14 +171,14 @@ export class RepositoryService {
    * Init cache for Deposit contract
    */
   private async initCachedDepositContract(blockTag: BlockTag): Promise<void> {
-    if (this.permanentContractsCache[DEPOSIT_ABI]) return;
+    if (this.permanentContractsCache[DEPOSIT_NODE_OPERATOR_ABI]) return;
     const depositAddress = await this.getDepositAddress(blockTag);
     const provider = this.providerService.provider;
 
     this.setPermanentContractCache(
       depositAddress,
-      DEPOSIT_ABI,
-      DepositAbi__factory.connect(depositAddress, provider),
+      DEPOSIT_NODE_OPERATOR_ABI,
+      DepositNodeOperatorAbi__factory.connect(depositAddress, provider),
     );
   }
 

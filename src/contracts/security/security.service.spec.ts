@@ -178,7 +178,7 @@ describe('SecurityService', () => {
     it('should add prefix', async () => {
       const blockNumber = 1;
 
-      const signPauseData = jest.spyOn(walletService, 'signPauseData');
+      const signPauseData = jest.spyOn(walletService, 'signSetValidatorUnsafeData');
 
       const signature = await securityService.signPauseData(
         blockNumber,
