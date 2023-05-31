@@ -347,7 +347,7 @@ describe('GuardianService', () => {
         .mockImplementation(async () => undefined);
 
       const mockPauseDeposits = jest
-        .spyOn(securityService, 'pauseDeposits')
+        .spyOn(securityService, 'pauseAKeyDeposits')
         .mockImplementation(async () => undefined);
 
       await guardianService.handleKeysIntersections(blockData);
@@ -365,7 +365,7 @@ describe('GuardianService', () => {
         .mockImplementation(async () => undefined);
 
       jest
-        .spyOn(securityService, 'pauseDeposits')
+        .spyOn(securityService, 'pauseAKeyDeposits')
         .mockImplementation(async () => undefined);
 
       await guardianService.handleKeysIntersections(blockData);

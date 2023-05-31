@@ -290,8 +290,6 @@ export class DepositService {
    * Returns a deposit root
    */
   public async getDepositRoot(blockTag?: BlockTag): Promise<string> {
-    const contract = await this.getContract();
-    const depositRoot = await contract.get_deposit_root({ blockTag });
-    return depositRoot;
+    return '';
   }
 }

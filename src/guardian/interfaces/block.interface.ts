@@ -11,5 +11,5 @@ export interface BlockData {
   depositedEvents: DepositEventGroup;
   guardianAddress: string;
   guardianIndex: number;
-  isDepositsPaused: boolean;
+  isNotEnough: boolean;
 }

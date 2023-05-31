@@ -8,13 +8,24 @@ export const REGISTRY_BY_NETWORK: {
   [CHAINS.Goerli]: '0x9D4AF1Ee19Dad8857db3a45B0374c81c8A1C6320',
 };
 
+export const NODE_OPERATOR_BY_NETWORK: {
+  [key in CHAINS]?: string;
+} = {
+  [CHAINS.Goerli]: '0x2acd68AF4211BC82Ca526BE28e2fF3A1cfb424c5',
+};
+
 export const getRegistryAddress = (chainId: CHAINS): string => {
   const address = REGISTRY_BY_NETWORK[chainId];
   if (!address) throw new Error(`Chain ${chainId} is not supported`);
 
   return address;
 };
+export const getNodeOperatorAddress = (chainId: CHAINS): string => {
+  const address = NODE_OPERATOR_BY_NETWORK[chainId];
+  if (!address) throw new Error(`Chain ${chainId} is not supported`);
 
+  return address;
+};
 export const REGISTRY_KEYS_QUERY_BATCH_SIZE = 200;
 export const REGISTRY_KEYS_CACHE_UPDATE_BLOCK_RATE = 20;
 

@@ -310,7 +310,7 @@ describe('SecurityService', () => {
           return iface.encodeFunctionResult('isPaused', [expected]);
         });
 
-      const isPaused = await securityService.isDepositsPaused();
+      const isPaused = await securityService.isNotEnough();
       expect(isPaused).toBe(expected);
       expect(mockProviderCall).toBeCalledTimes(1);
     });
@@ -348,7 +348,7 @@ describe('SecurityService', () => {
     });
 
     it('should call contract method', async () => {
-      await securityService.pauseDeposits(blockNumber, signature);
+      await securityService.pauseAKeyDeposits(blockNumber, signature);
 
       expect(mockPauseDeposits).toBeCalledTimes(1);
       expect(mockWait).toBeCalledTimes(1);
@@ -358,8 +358,8 @@ describe('SecurityService', () => {
 
     it('should exit if the previous call is not completed', async () => {
       await Promise.all([
-        securityService.pauseDeposits(blockNumber, signature),
-        securityService.pauseDeposits(blockNumber, signature),
+        securityService.pauseAKeyDeposits(blockNumber, signature),
+        securityService.pauseAKeyDeposits(blockNumber, signature),
       ]);
 
       expect(mockPauseDeposits).toBeCalledTimes(1);
