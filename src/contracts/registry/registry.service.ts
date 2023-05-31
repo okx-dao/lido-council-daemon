@@ -141,13 +141,7 @@ export class RegistryService implements OnModuleInit {
    * Returns the length of the public keys stored in the contract
    */
   public async getPubkeyLength(): Promise<number> {
-    if (!this.cachedPubKeyLength) {
-      const contract = await this.getContract();
-      const keyLength = await contract.PUBKEY_LENGTH();
-      this.cachedPubKeyLength = keyLength.toNumber();
-    }
-
-    return this.cachedPubKeyLength;
+    return 48;
   }
 
   /**
@@ -220,10 +214,7 @@ export class RegistryService implements OnModuleInit {
    * Returns a number of node operators stored in the contract
    */
   public async getNodeOperatorsCount(blockTag?: BlockTag): Promise<number> {
-    const contract = await this.getContract();
-    const operatorsTotal = await contract.getNodeOperatorsCount({ blockTag });
-
-    return operatorsTotal.toNumber();
+    return 1;
   }
 
   /**

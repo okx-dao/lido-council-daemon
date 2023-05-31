@@ -9,7 +9,7 @@ export const DEPOSIT_SECURITY_BY_NETWORK: {
 export const DEPOSIT_NODE_OPERATOR_BY_NETWORK: {
   [key in CHAINS]?: string;
 } = {
-  [CHAINS.Goerli]: '0x2acd68AF4211BC82Ca526BE28e2fF3A1cfb424c5',
+  [CHAINS.Goerli]: '0x1E4f4fd4513dCE5FdD51e7e00c9ea0Ca093986cD',
 };
 export const DAWN_DEPOSIT_BY_NETWORK: {
   [key in CHAINS]?: string;
