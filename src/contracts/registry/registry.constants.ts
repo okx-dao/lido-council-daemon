@@ -11,7 +11,7 @@ export const REGISTRY_BY_NETWORK: {
 export const NODE_OPERATOR_BY_NETWORK: {
   [key in CHAINS]?: string;
 } = {
-  [CHAINS.Goerli]: '0x2acd68AF4211BC82Ca526BE28e2fF3A1cfb424c5',
+  [CHAINS.Goerli]: '0x1E4f4fd4513dCE5FdD51e7e00c9ea0Ca093986cD',
 };
 
 export const getRegistryAddress = (chainId: CHAINS): string => {

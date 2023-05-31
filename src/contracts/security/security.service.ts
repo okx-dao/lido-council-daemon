@@ -17,6 +17,7 @@ import { Counter } from 'prom-client';
 import { ProviderService } from 'provider';
 import { WalletService } from 'wallet';
 import {
+  getDawnDepositOperatorAddress,
   getDepositNodeOperatorAddress,
   getDepositSecurityAddress,
 } from './security.constants';
@@ -90,7 +91,7 @@ export class SecurityService implements OnModuleInit {
 
   public async getDawnDepositContract(): Promise<DawnDepositAbi> {
     if (!this.cachedDawnDepositContract) {
-      const address = await this.getDepositNodeOperatorServiceAddress();
+      const address = await this.getDawnDepositServiceAddress();
       const provider = this.providerService.provider;
       this.cachedDawnDepositContract = DawnDepositAbi__factory.connect(
         address,
@@ -162,6 +163,10 @@ export class SecurityService implements OnModuleInit {
     return getDepositNodeOperatorAddress(chainId);
   }
 
+  public async getDawnDepositServiceAddress(): Promise<string> {
+    const chainId = await this.providerService.getChainId();
+    return getDawnDepositOperatorAddress(chainId);
+  }
   /**
    * Returns an address of the deposit contract from the security contract
    */
@@ -269,7 +274,7 @@ export class SecurityService implements OnModuleInit {
    * Returns the current state of deposits
    */
   public async isNotEnough(blockTag?: BlockTag): Promise<boolean> {
-    const contract = await this.getDawnDepositContractWithSigner();
+    const contract = await this.getDawnDepositContract();
     const bufferedEther = await contract.getBufferedEther({ blockTag });
     return bufferedEther.gt(
       new BigNumber({}, '10').pow(18).mul(new BigNumber({}, '32')),

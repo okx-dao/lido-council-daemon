@@ -204,10 +204,7 @@ export class RegistryService implements OnModuleInit {
    */
   public async getKeysOpIndex(blockTag?: BlockTag): Promise<number> {
     const contract = await this.getValidatorKeyContract();
-    const { pubkeys, statuses } = await contract.callStatic.getNodeValidators(
-      0,
-      0,
-    );
+    const { pubkeys, statuses } = await contract.getNodeValidators(0, 0);
     let num = 0;
     let states: any;
     for (states in statuses) {
