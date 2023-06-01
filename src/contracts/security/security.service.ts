@@ -276,7 +276,7 @@ export class SecurityService implements OnModuleInit {
   public async isNotEnough(blockTag?: BlockTag): Promise<boolean> {
     const contract = await this.getDawnDepositContract();
     const bufferedEther = await contract.getBufferedEther({ blockTag });
-    return bufferedEther.gt(BigNumber.from('32000000000000000000'));
+    return bufferedEther.lt(BigNumber.from('32000000000000000000'));
   }
 
   /**

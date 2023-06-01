@@ -172,9 +172,6 @@ export class RegistryService implements OnModuleInit {
 
     const { operators, pubkeys, statuses } =
       await contract.callStatic.getNodeValidators(0, 0);
-    let i: string;
-    let sumString: string;
-    sumString = '';
     let num = 0;
     let states: any;
     for (states in statuses) {
@@ -183,11 +180,7 @@ export class RegistryService implements OnModuleInit {
       }
       num++;
     }
-    for (i in pubkeys) {
-      sumString = sumString.concat(i);
-    }
-    const splittedKeys = splitPubKeys(sumString, pubkeyLength);
-    return splittedKeys.slice(num, splittedKeys.length);
+    return pubkeys.slice(num, pubkeys.length);
   }
 
   /**

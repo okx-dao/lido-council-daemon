@@ -158,7 +158,7 @@ export class GuardianService implements OnModuleInit {
    */
   public async checkKeysIntersections(blockData: BlockData): Promise<void> {
     if (blockData.isNotEnough) {
-      this.logger.warn('Deposits are paused');
+      this.logger.warn('Deposits are not enough');
       return;
     }
 
