@@ -170,10 +170,8 @@ export class RegistryService implements OnModuleInit {
         this.getPubkeyLength(),
       ]);
 
-    const { pubkeys, statuses } = await contract.callStatic.getNodeValidators(
-      0,
-      0,
-    );
+    const { operators, pubkeys, statuses } =
+      await contract.callStatic.getNodeValidators(0, 0);
     let i: string;
     let sumString: string;
     sumString = '';
