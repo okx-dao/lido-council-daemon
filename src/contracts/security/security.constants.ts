@@ -16,6 +16,11 @@ export const DAWN_DEPOSIT_BY_NETWORK: {
 } = {
   [CHAINS.Goerli]: '0x9a8E4ae2fAd1f196a80d28bE375D0147FD8e4846',
 };
+export const DAWN_DEPOSIT_SECURITY_BY_NETWORK: {
+  [key in CHAINS]?: string;
+} = {
+  [CHAINS.Goerli]: '0xdb833bce275cecf2cb65b23bf5035de7a9076d01',
+};
 export const getDepositSecurityAddress = (chainId: CHAINS): string => {
   const address = DEPOSIT_SECURITY_BY_NETWORK[chainId];
   if (!address) throw new Error(`Chain ${chainId} is not supported`);
@@ -30,6 +35,13 @@ export const getDepositNodeOperatorAddress = (chainId: CHAINS): string => {
 };
 export const getDawnDepositOperatorAddress = (chainId: CHAINS): string => {
   const address = DAWN_DEPOSIT_BY_NETWORK[chainId];
+  if (!address) throw new Error(`Chain ${chainId} is not supported`);
+
+  return address;
+};
+
+export const getDawnDepositSecurityAddress = (chainId: CHAINS): string => {
+  const address = DAWN_DEPOSIT_SECURITY_BY_NETWORK[chainId];
   if (!address) throw new Error(`Chain ${chainId} is not supported`);
 
   return address;

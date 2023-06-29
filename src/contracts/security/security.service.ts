@@ -18,16 +18,18 @@ import { ProviderService } from 'provider';
 import { WalletService } from 'wallet';
 import {
   getDawnDepositOperatorAddress,
+  getDawnDepositSecurityAddress,
   getDepositNodeOperatorAddress,
   getDepositSecurityAddress,
 } from './security.constants';
 import {
   DawnDepositAbi,
   DawnDepositAbi__factory,
+  DawnDepositSecuritymoduleAbi,
+  DawnDepositSecuritymoduleAbi__factory,
   DepositNodeOperatorAbi,
   DepositNodeOperatorAbi__factory,
 } from '../../generated';
-import { BigNumber } from '@ethersproject/bignumber';
 
 @Injectable()
 export class SecurityService implements OnModuleInit {
@@ -42,15 +44,20 @@ export class SecurityService implements OnModuleInit {
   private cachedNosContract: DepositNodeOperatorAbi | null = null;
   private cachedDawnDepositContract: DawnDepositAbi | null = null;
 
+  private cachedDawnDepositSecurityContract: DawnDepositSecuritymoduleAbi | null =
+    null;
+
   private cachedContractWithSigner: SecurityAbi | null = null;
   private cachedNosContractWithSigner: DepositNodeOperatorAbi | null = null;
+  private cachedDepositSecurityContractWithSigner: DawnDepositSecuritymoduleAbi | null =
+    null;
   private cachedDawnDepositContractWithSigner: DawnDepositAbi | null = null;
 
   private cachedAttestMessagePrefix: string | null = null;
   private cachedPauseMessagePrefix: string | null = null;
 
   public async onModuleInit(): Promise<void> {
-    const guardianIndex = await this.getGuardianIndex('latest');
+    const guardianIndex = await this.getGuardianIndex();
     const address = this.walletService.address;
 
     if (guardianIndex === -1) {
@@ -66,8 +73,10 @@ export class SecurityService implements OnModuleInit {
   public async getContract(): Promise<SecurityAbi> {
     if (!this.cachedContract) {
       const address = await this.getDepositSecurityAddress();
-      const provider = this.providerService.provider;
-      this.cachedContract = SecurityAbi__factory.connect(address, provider);
+      this.cachedContract = SecurityAbi__factory.connect(
+        address,
+        this.providerService.provider,
+      );
     }
 
     return this.cachedContract;
@@ -79,10 +88,9 @@ export class SecurityService implements OnModuleInit {
   public async getNosContract(): Promise<DepositNodeOperatorAbi> {
     if (!this.cachedNosContract) {
       const address = await this.getDepositNodeOperatorServiceAddress();
-      const provider = this.providerService.provider;
       this.cachedNosContract = DepositNodeOperatorAbi__factory.connect(
         address,
-        provider,
+        this.providerService.provider,
       );
     }
 
@@ -92,14 +100,26 @@ export class SecurityService implements OnModuleInit {
   public async getDawnDepositContract(): Promise<DawnDepositAbi> {
     if (!this.cachedDawnDepositContract) {
       const address = await this.getDawnDepositServiceAddress();
-      const provider = this.providerService.provider;
       this.cachedDawnDepositContract = DawnDepositAbi__factory.connect(
         address,
-        provider,
+        this.providerService.provider,
       );
     }
 
     return this.cachedDawnDepositContract;
+  }
+
+  public async getDawnDepositSecurityContract(): Promise<DawnDepositSecuritymoduleAbi> {
+    if (!this.cachedDawnDepositSecurityContract) {
+      const address = await this.getDepositSecurityServiceAddress();
+      this.cachedDawnDepositSecurityContract =
+        DawnDepositSecuritymoduleAbi__factory.connect(
+          address,
+          this.providerService.provider,
+        );
+    }
+
+    return this.cachedDawnDepositSecurityContract;
   }
 
   /**
@@ -108,12 +128,9 @@ export class SecurityService implements OnModuleInit {
   public async getContractWithSigner(): Promise<SecurityAbi> {
     if (!this.cachedContractWithSigner) {
       const wallet = this.walletService.wallet;
-      const provider = this.providerService.provider;
-      const walletWithProvider = wallet.connect(provider);
+      const walletWithProvider = wallet.connect(this.providerService.provider);
       const contract = await this.getContract();
-      const contractWithSigner = contract.connect(walletWithProvider);
-
-      this.cachedContractWithSigner = contractWithSigner;
+      this.cachedContractWithSigner = contract.connect(walletWithProvider);
     }
 
     return this.cachedContractWithSigner;
@@ -124,15 +141,24 @@ export class SecurityService implements OnModuleInit {
   public async getNosContractWithSigner(): Promise<DepositNodeOperatorAbi> {
     if (!this.cachedNosContractWithSigner) {
       const wallet = this.walletService.wallet;
-      const provider = this.providerService.provider;
-      const walletWithProvider = wallet.connect(provider);
+      const walletWithProvider = wallet.connect(this.providerService.provider);
       const contract = await this.getNosContract();
-      const contractWithSigner = contract.connect(walletWithProvider);
-
-      this.cachedNosContractWithSigner = contractWithSigner;
+      this.cachedNosContractWithSigner = contract.connect(walletWithProvider);
     }
 
     return this.cachedNosContractWithSigner;
+  }
+
+  public async getDepositSecurityContractWithSigner(): Promise<DawnDepositSecuritymoduleAbi> {
+    if (!this.cachedDepositSecurityContractWithSigner) {
+      const wallet = this.walletService.wallet;
+      const walletWithProvider = wallet.connect(this.providerService.provider);
+      const contract = await this.getDawnDepositSecurityContract();
+      this.cachedDepositSecurityContractWithSigner =
+        contract.connect(walletWithProvider);
+    }
+
+    return this.cachedDepositSecurityContractWithSigner;
   }
   /**
    * Returns an instance of the contract that can send signed transactions
@@ -140,12 +166,10 @@ export class SecurityService implements OnModuleInit {
   public async getDawnDepositContractWithSigner(): Promise<DawnDepositAbi> {
     if (!this.cachedDawnDepositContractWithSigner) {
       const wallet = this.walletService.wallet;
-      const provider = this.providerService.provider;
-      const walletWithProvider = wallet.connect(provider);
+      const walletWithProvider = wallet.connect(this.providerService.provider);
       const contract = await this.getDawnDepositContract();
-      const contractWithSigner = contract.connect(walletWithProvider);
-
-      this.cachedDawnDepositContractWithSigner = contractWithSigner;
+      this.cachedDawnDepositContractWithSigner =
+        contract.connect(walletWithProvider);
     }
 
     return this.cachedDawnDepositContractWithSigner;
@@ -162,6 +186,10 @@ export class SecurityService implements OnModuleInit {
     const chainId = await this.providerService.getChainId();
     return getDepositNodeOperatorAddress(chainId);
   }
+  public async getDepositSecurityServiceAddress(): Promise<string> {
+    const chainId = await this.providerService.getChainId();
+    return getDawnDepositSecurityAddress(chainId);
+  }
 
   public async getDawnDepositServiceAddress(): Promise<string> {
     const chainId = await this.providerService.getChainId();
@@ -172,9 +200,7 @@ export class SecurityService implements OnModuleInit {
    */
   public async getDepositContractAddress() {
     const contract = await this.getContract();
-    const address = await contract.DEPOSIT_CONTRACT();
-
-    return address;
+    return await contract.DEPOSIT_CONTRACT();
   }
 
   /**
@@ -182,9 +208,7 @@ export class SecurityService implements OnModuleInit {
    */
   public async getLidoContractAddress() {
     const contract = await this.getContract();
-    const address = await contract.LIDO();
-
-    return address;
+    return await contract.LIDO();
   }
 
   /**
@@ -192,9 +216,9 @@ export class SecurityService implements OnModuleInit {
    */
   public async getAttestMessagePrefix(): Promise<string> {
     if (!this.cachedAttestMessagePrefix) {
-      const contract = await this.getContract();
-      const messagePrefix = await contract.ATTEST_MESSAGE_PREFIX();
-      this.cachedAttestMessagePrefix = messagePrefix;
+      const contract = await this.getDawnDepositSecurityContract();
+      // const messagePrefix = await contract.ATTEST_MESSAGE_PREFIX();
+      this.cachedAttestMessagePrefix = await contract.getAttestMessagePrefix();
     }
 
     return this.cachedAttestMessagePrefix;
@@ -205,9 +229,8 @@ export class SecurityService implements OnModuleInit {
    */
   public async getPauseMessagePrefix(): Promise<string> {
     if (!this.cachedPauseMessagePrefix) {
-      const contract = await this.getContract();
-      const messagePrefix = await contract.PAUSE_MESSAGE_PREFIX();
-      this.cachedPauseMessagePrefix = messagePrefix;
+      const contract = await this.getDawnDepositSecurityContract();
+      this.cachedPauseMessagePrefix = await contract.getUnsafeMessagePrefix();
     }
 
     return this.cachedPauseMessagePrefix;
@@ -226,9 +249,11 @@ export class SecurityService implements OnModuleInit {
   /**
    * Returns the guardian index in the list
    */
-  public async getGuardianIndex(blockTag?: BlockTag): Promise<number> {
+  public async getGuardianIndex(): Promise<number> {
+    const contract = await this.getDawnDepositSecurityContract();
     const address = this.walletService.address;
-    return 0;
+    const index = await contract.getGuardianIndex(address);
+    return index.toNumber();
   }
 
   /**
@@ -239,63 +264,85 @@ export class SecurityService implements OnModuleInit {
   }
 
   /**
+   * Return withdraw credentials
+   */
+  public async getWCAddress(): Promise<string> {
+    const contract = await this.getDawnDepositContract();
+    return await contract.getWithdrawalCredentials();
+  }
+
+  /**
    * Signs a message to deposit buffered ethers with the prefix from the contract
    */
   public async signDepositData(
-    indexs: number[],
     blockNumber: number,
     blockHash: string,
+    depositRoot: string,
+    indexs: number[],
   ): Promise<Signature> {
     const messagePrefix = await this.getAttestMessagePrefix();
 
-    const contract = await this.getNosContractWithSigner();
+    // const contract = await this.getNosContractWithSigner();
 
-    const tx = await contract.activateValidators(indexs);
-    await tx.wait();
+    // const tx = await contract.activateValidators(indexs);
+    // await tx.wait();
     return await this.walletService.signDepositData(
       messagePrefix,
-      'depositRoot',
-      0,
       blockNumber,
       blockHash,
+      depositRoot,
+      indexs,
     );
   }
 
   /**
    * Signs a message to pause deposits with the prefix from the contract
    */
-  public async signPauseData(blockNumber: number): Promise<Signature> {
+  public async signPauseData(
+    blockNumber: number,
+    index: number,
+    slashAmount: number,
+  ): Promise<Signature> {
     const messagePrefix = await this.getPauseMessagePrefix();
 
-    return await this.walletService.signPauseData(messagePrefix, blockNumber);
+    return await this.walletService.signPauseData(
+      messagePrefix,
+      blockNumber,
+      index,
+      slashAmount,
+    );
   }
 
   /**
    * Returns the current state of deposits
    */
-  public async isNotEnough(blockTag?: BlockTag): Promise<boolean> {
-    const contract = await this.getDawnDepositContract();
-    const bufferedEther = await contract.getBufferedEther({ blockTag });
-    return bufferedEther.lt(BigNumber.from('32000000000000000000'));
+  public async isNotEnough(): Promise<boolean> {
+    const contract = await this.getDawnDepositSecurityContract();
+    return !(await contract.canDeposit());
   }
 
   /**
    * Sends a transaction to pause deposits
-   * @param index
-   * @param signature - message signature
    */
   @OneAtTime()
   public async pauseAKeyDeposits(
+    blocknumber: number,
     index: number,
+    slashAmount: number,
     signature: Signature,
   ): Promise<ContractReceipt | void> {
     this.logger.warn('Try to pause deposits');
     this.pauseAttempts.inc();
 
-    const contract = await this.getNosContractWithSigner();
+    const contract = await this.getDepositSecurityContractWithSigner();
 
     const { r, _vs: vs } = signature;
-    const tx = await contract.setValidatorUnsafe(index, 0);
+    const tx = await contract.setValidatorUnsafe(
+      blocknumber,
+      index,
+      slashAmount,
+      { r, vs },
+    );
 
     this.logger.warn('Pause transaction sent', { txHash: tx.hash });
     this.logger.warn('Waiting for block confirmation');

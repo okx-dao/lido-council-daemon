@@ -30,6 +30,7 @@ export interface MessageApp {
 
 export interface MessagePause extends MessageRequiredFields {
   blockNumber: number;
-  blockHash: string;
+  index: number;
+  slashAmount: number;
   signature: Signature;
 }

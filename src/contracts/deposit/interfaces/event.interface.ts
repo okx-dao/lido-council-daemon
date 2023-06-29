@@ -12,3 +12,7 @@ export interface DepositEventGroup {
   startBlock: number;
   endBlock: number;
 }
+export interface DepositData {
+  pubKey: string;
+  index: number;
+}

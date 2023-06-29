@@ -5,7 +5,7 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
-import { DepositService } from 'contracts/deposit';
+import { DepositData, DepositService } from 'contracts/deposit';
 import { RegistryService } from 'contracts/registry';
 import { SecurityService } from 'contracts/security';
 import { ProviderService } from 'provider';
@@ -17,7 +17,7 @@ import {
   MessagesService,
   MessageType,
 } from 'messages';
-import { ContractsState, BlockData } from './interfaces';
+import { BlockData, ContractsState } from './interfaces';
 import { GUARDIAN_DEPOSIT_RESIGNING_BLOCKS } from './guardian.constants';
 import { OneAtTime } from 'common/decorators';
 import { InjectMetric } from '@willsoto/nestjs-prometheus';
@@ -77,9 +77,7 @@ export class GuardianService implements OnModuleInit {
    * Subscribes to the event of a new block appearance
    */
   public subscribeToEthereumUpdates() {
-    const provider = this.providerService.provider;
-
-    provider.on('block', () => this.handleNewBlock());
+    this.providerService.provider.on('block', () => this.handleNewBlock());
     this.logger.log('GuardianService subscribed to Ethereum events');
   }
 
@@ -128,8 +126,8 @@ export class GuardianService implements OnModuleInit {
         this.registryService.getNextSigningKeys(blockNumber),
         this.depositService.getDepositRoot(blockNumber),
         this.depositService.getAllDepositedEvents(blockNumber),
-        this.securityService.getGuardianIndex(blockNumber),
-        this.securityService.isNotEnough(blockNumber),
+        this.securityService.getGuardianIndex(),
+        this.securityService.isNotEnough(),
       ]);
 
       endTimer();
@@ -157,18 +155,19 @@ export class GuardianService implements OnModuleInit {
    * @param blockData - collected data from the current block
    */
   public async checkKeysIntersections(blockData: BlockData): Promise<void> {
+    const nextKeysIntersectionsIndex = await this.getNextKeysIntersections(
+      blockData,
+    );
+    // const cachedKeysIntersections = this.getCachedKeysIntersections(blockData);
+    // const intersections = nextKeysIntersections.concat(cachedKeysIntersections);
+    const isIntersectionsFound = nextKeysIntersectionsIndex.length > 0;
+
     if (blockData.isNotEnough) {
       this.logger.warn('Deposits are not enough');
       return;
     }
-
-    const nextKeysIntersections = this.getNextKeysIntersections(blockData);
-    // const cachedKeysIntersections = this.getCachedKeysIntersections(blockData);
-    // const intersections = nextKeysIntersections.concat(cachedKeysIntersections);
-    const isIntersectionsFound = nextKeysIntersections.length > 0;
-
     if (isIntersectionsFound) {
-      await this.handleKeysIntersections(blockData);
+      await this.handleKeysIntersections(blockData, nextKeysIntersectionsIndex);
     } else {
       await this.handleCorrectKeys(blockData);
     }
@@ -180,15 +179,34 @@ export class GuardianService implements OnModuleInit {
    * @param blockData - collected data from the current block
    * @returns list of keys that were deposited earlier
    */
-  public getNextKeysIntersections(blockData: BlockData): string[] {
+  public async getNextKeysIntersections(
+    blockData: BlockData,
+  ): Promise<number[]> {
     const { depositedEvents, nextSigningKeys } = blockData;
     const { depositRoot, keysOpIndex } = blockData;
 
-    const depositedKeys = depositedEvents.events.map(({ pubkey }) => pubkey);
-    const depositedKeysSet = new Set(depositedKeys);
+    let nextSigningKey: string;
+    let nextSignKeyWIthIndexs: DepositData[] = [];
+    let startIndex = keysOpIndex;
+    for (nextSigningKey in nextSigningKeys) {
+      nextSignKeyWIthIndexs.push({ pubKey: nextSigningKey, index: startIndex });
+      startIndex++;
+    }
 
-    const intersections = nextSigningKeys.filter((nextSigningKey) =>
-      depositedKeysSet.has(nextSigningKey),
+    const nextSigningKeysSet = new Set(nextSigningKeys);
+
+    let intersections = depositedEvents.events.filter(({ pubkey }) =>
+      nextSigningKeysSet.has(pubkey),
+    );
+
+    const dawnWC = await this.securityService.getWCAddress();
+    intersections = intersections.filter((deposit) => deposit.wc !== dawnWC);
+
+    const intersectionsPubKeySet = new Set(
+      intersections.map((obj) => obj.pubkey),
+    );
+    const depositDatas: DepositData[] = nextSignKeyWIthIndexs.filter(
+      ({ pubKey }) => intersectionsPubKeySet.has(pubKey),
     );
 
     if (intersections.length) {
@@ -199,7 +217,7 @@ export class GuardianService implements OnModuleInit {
       });
     }
 
-    return intersections;
+    return depositDatas.map((obj) => obj.index);
   }
 
   /**
@@ -242,16 +260,18 @@ export class GuardianService implements OnModuleInit {
 
   /**
    * Handles the situation when keys have previously deposited copies
-   * @param blockData - collected data from the current block
-   * @param intersections - list of keys that were deposited earlier
    */
-  public async handleKeysIntersections(blockData: BlockData): Promise<void> {
+  public async handleKeysIntersections(
+    blockData: BlockData,
+    indexes: number[],
+  ): Promise<void> {
     const {
       blockNumber,
       blockHash,
       guardianAddress,
       guardianIndex,
       isNotEnough,
+      keysOpIndex,
     } = blockData;
 
     if (isNotEnough) {
@@ -259,24 +279,28 @@ export class GuardianService implements OnModuleInit {
       return;
     }
 
-    const signature = await this.securityService.signPauseData(blockNumber);
-
-    const pauseMessage: MessagePause = {
-      type: MessageType.PAUSE,
-      guardianAddress,
-      guardianIndex,
-      blockNumber,
-      blockHash,
-      signature,
-    };
-
-    // call without waiting for completion
-    this.securityService
-      .pauseAKeyDeposits(blockData.keysOpIndex, signature)
-      .catch((error) => this.logger.error(error));
-
-    this.logger.warn('Suspicious case detected');
-    await this.sendMessageFromGuardian(pauseMessage);
+    for (const index of indexes) {
+      const signature = await this.securityService.signPauseData(
+        blockNumber,
+        index,
+        0,
+      );
+      const pauseMessage: MessagePause = {
+        type: MessageType.PAUSE,
+        guardianAddress,
+        guardianIndex,
+        blockNumber,
+        index,
+        slashAmount: 0,
+        signature,
+      };
+      // call without waiting for completion
+      this.securityService
+        .pauseAKeyDeposits(blockNumber, index, 0, signature)
+        .catch((error) => this.logger.error(error));
+      this.logger.warn('Suspicious case detected');
+      await this.sendMessageFromGuardian(pauseMessage);
+    }
   }
 
   /**
@@ -306,9 +330,10 @@ export class GuardianService implements OnModuleInit {
     if (isSameContractsState) return;
 
     const signature = await this.securityService.signDepositData(
-      [keysOpIndex],
       blockNumber,
       blockHash,
+      depositRoot,
+      [keysOpIndex],
     );
 
     const depositMessage: MessageDeposit = {

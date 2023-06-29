@@ -1,15 +1,15 @@
 import { Inject, Injectable, LoggerService } from '@nestjs/common';
 import { performance } from 'perf_hooks';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
-import { ProviderService, ERROR_LIMIT_EXCEEDED } from 'provider';
+import { ERROR_LIMIT_EXCEEDED, ProviderService } from 'provider';
 import { DepositAbi, DepositAbi__factory } from 'generated';
 import { DepositEventEvent } from 'generated/DepositAbi';
 import {
-  DEPOSIT_EVENTS_STEP,
-  DEPOSIT_EVENTS_RETRY_TIMEOUT_MS,
-  getDeploymentBlockByNetwork,
-  DEPOSIT_EVENTS_CACHE_UPDATE_BLOCK_RATE,
   DEPOSIT_EVENTS_CACHE_LAG_BLOCKS,
+  DEPOSIT_EVENTS_CACHE_UPDATE_BLOCK_RATE,
+  DEPOSIT_EVENTS_RETRY_TIMEOUT_MS,
+  DEPOSIT_EVENTS_STEP,
+  getDeploymentBlockByNetwork,
 } from './deposit.constants';
 import {
   DepositEvent,
@@ -88,8 +88,10 @@ export class DepositService {
   public async getContract(): Promise<DepositAbi> {
     if (!this.cachedContract) {
       const address = await this.securityService.getDepositContractAddress();
-      const provider = this.providerService.provider;
-      this.cachedContract = DepositAbi__factory.connect(address, provider);
+      this.cachedContract = DepositAbi__factory.connect(
+        address,
+        this.providerService.provider,
+      );
     }
 
     return this.cachedContract;
@@ -290,6 +292,7 @@ export class DepositService {
    * Returns a deposit root
    */
   public async getDepositRoot(blockTag?: BlockTag): Promise<string> {
-    return '';
+    const contract = await this.getContract();
+    return await contract.get_deposit_root({ blockTag });
   }
 }

@@ -46,9 +46,7 @@ export class WalletService implements OnModuleInit {
    * Subscribes to the event of a new block appearance
    */
   public subscribeToEthereumUpdates() {
-    const provider = this.providerService.provider;
-
-    provider.on('block', async (blockNumber) => {
+    this.providerService.provider.on('block', async (blockNumber) => {
       if (blockNumber % WALLET_BALANCE_UPDATE_BLOCK_RATE !== 0) return;
       this.updateBalance().catch((error) => this.logger.error(error));
     });
@@ -61,8 +59,9 @@ export class WalletService implements OnModuleInit {
    */
   @OneAtTime()
   public async updateBalance() {
-    const provider = this.providerService.provider;
-    const balanceWei = await provider.getBalance(this.address);
+    const balanceWei = await this.providerService.provider.getBalance(
+      this.address,
+    );
     const formatted = `${formatEther(balanceWei)} ETH`;
     const isSufficient = balanceWei.gte(WALLET_MIN_BALANCE);
 
@@ -114,23 +113,18 @@ export class WalletService implements OnModuleInit {
 
   /**
    * Signs a message to deposit buffered ethers
-   * @param prefix - unique prefix from the contract for this type of message
-   * @param depositRoot - current deposit root from the deposit contract
-   * @param keysOpIndex - current index of keys operations from the registry contract
-   * @param blockNumber - current block number
-   * @param blockHash - current block hash
    * @returns signature
    */
   public async signDepositData(
     prefix: string,
-    depositRoot: string,
-    keysOpIndex: number,
     blockNumber: number,
     blockHash: string,
+    depositRoot: string,
+    indexs: number[],
   ): Promise<Signature> {
     const encodedData = defaultAbiCoder.encode(
-      ['bytes32', 'bytes32', 'uint256', 'uint256', 'bytes32'],
-      [prefix, depositRoot, keysOpIndex, blockNumber, blockHash],
+      ['bytes32', 'uint256', 'bytes32', 'bytes32', 'uint256[]'],
+      [prefix, blockNumber, blockHash, depositRoot, indexs],
     );
 
     const messageHash = keccak256(encodedData);
@@ -139,17 +133,17 @@ export class WalletService implements OnModuleInit {
 
   /**
    * Signs a message to pause deposits
-   * @param prefix - unique prefix from the contract for this type of message
-   * @param blockNumber - block number that is signed
    * @returns signature
    */
   public async signPauseData(
     prefix: string,
     blockNumber: number,
+    index: number,
+    slashAmount: number,
   ): Promise<Signature> {
     const encodedData = defaultAbiCoder.encode(
-      ['bytes32', 'uint256'],
-      [prefix, blockNumber],
+      ['bytes32', 'uint256', 'uint256', 'uint256'],
+      [prefix, blockNumber, index, slashAmount],
     );
 
     const messageHash = keccak256(encodedData);
