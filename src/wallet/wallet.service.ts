@@ -20,6 +20,7 @@ import {
   WALLET_MIN_BALANCE,
   WALLET_PRIVATE_KEY,
 } from './wallet.constants';
+import { solidityPack } from 'ethers/lib/utils';
 
 @Injectable()
 export class WalletService implements OnModuleInit {
@@ -122,12 +123,13 @@ export class WalletService implements OnModuleInit {
     depositRoot: string,
     indexs: number[],
   ): Promise<Signature> {
-    const encodedData = defaultAbiCoder.encode(
+    const encodedData = solidityPack(
       ['bytes32', 'uint256', 'bytes32', 'bytes32', 'uint256[]'],
       [prefix, blockNumber, blockHash, depositRoot, indexs],
     );
 
     const messageHash = keccak256(encodedData);
+    console.log('messageHash:', messageHash);
     return await this.signMessage(messageHash);
   }
 
@@ -141,7 +143,7 @@ export class WalletService implements OnModuleInit {
     index: number,
     slashAmount: number,
   ): Promise<Signature> {
-    const encodedData = defaultAbiCoder.encode(
+    const encodedData = solidityPack(
       ['bytes32', 'uint256', 'uint256', 'uint256'],
       [prefix, blockNumber, index, slashAmount],
     );

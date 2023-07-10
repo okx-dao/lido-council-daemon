@@ -158,6 +158,9 @@ export class GuardianService implements OnModuleInit {
     const nextKeysIntersectionsIndex = await this.getNextKeysIntersections(
       blockData,
     );
+    this.logger.warn('Deposits not good index :', {
+      nextKeysIntersectionsIndex,
+    });
     // const cachedKeysIntersections = this.getCachedKeysIntersections(blockData);
     // const intersections = nextKeysIntersections.concat(cachedKeysIntersections);
     const isIntersectionsFound = nextKeysIntersectionsIndex.length > 0;
@@ -205,6 +208,8 @@ export class GuardianService implements OnModuleInit {
     const intersectionsPubKeySet = new Set(
       intersections.map((obj) => obj.pubkey),
     );
+    const a = intersections.map((obj) => obj.pubkey);
+    this.logger.warn('intersectionsPubKeySet is :', { a });
     const depositDatas: DepositData[] = nextSignKeyWIthIndexs.filter(
       ({ pubKey }) => intersectionsPubKeySet.has(pubKey),
     );
@@ -305,7 +310,6 @@ export class GuardianService implements OnModuleInit {
 
   /**
    * Handles the situation when keys do not have previously deposited copies
-   * @param blockData - collected data from the current block
    */
   public async handleCorrectKeys(blockData: BlockData): Promise<void> {
     const {

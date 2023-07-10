@@ -69,17 +69,26 @@ describe('WalletService', () => {
 
   describe('signDepositData', () => {
     it('should sign deposit data', async () => {
-      const prefix = hexZeroPad('0x1', 32);
-      const depositRoot = hexZeroPad('0x2', 32);
-      const keysOpIndex = 1;
-      const blockNumber = 1;
-      const blockHash = hexZeroPad('0x3', 32);
+      const prefix = hexZeroPad(
+        '0x5f3774264799f2d397a5f1725c92e628dba9e6a5f02beb092ef8cae850b05001',
+        32,
+      );
+      const depositRoot = hexZeroPad(
+        '0xf551fb18d2bd952eed99e3a1f223cb125b64814c723592f5d3df1865b72f071b',
+        32,
+      );
+      const indexs = [0, 1];
+      const blockNumber = 42;
+      const blockHash = hexZeroPad(
+        '0xe6372e60d69db155b0fb55547023884cdab7e783a939f37e4fa7cc183b2cf0c3',
+        32,
+      );
       const signature = await walletService.signDepositData(
         prefix,
-        depositRoot,
-        keysOpIndex,
         blockNumber,
         blockHash,
+        depositRoot,
+        indexs,
       );
 
       expect(signature).toEqual(
@@ -95,9 +104,17 @@ describe('WalletService', () => {
 
   describe('signPauseData', () => {
     it('should sign pause data', async () => {
-      const prefix = hexZeroPad('0x1', 32);
-      const blockNumber = 1;
-      const signature = await walletService.signPauseData(prefix, blockNumber);
+      const prefix = hexZeroPad(
+        '0x5f3774264799f2d397a5f1725c92e628dba9e6a5f02beb092ef8cae850b05001',
+        32,
+      );
+      const blockNumber = 42;
+      const signature = await walletService.signPauseData(
+        prefix,
+        blockNumber,
+        1,
+        0,
+      );
 
       expect(signature).toEqual(
         expect.objectContaining({
