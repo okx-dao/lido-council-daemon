@@ -177,6 +177,7 @@ export class RegistryService implements OnModuleInit {
     let state: any;
     const validatorList: validaitor[] = [];
     for (state of statuses) {
+      num++;
       if (state !== 1) {
         continue;
       }
@@ -184,10 +185,10 @@ export class RegistryService implements OnModuleInit {
         operator: operators[num],
         pubKey: pubkeys[num],
         state: state,
+        index: num,
       });
-      num++;
     }
-    return validatorList.map((obj) => obj.pubKey);
+    return validatorList;
   }
 
   /**

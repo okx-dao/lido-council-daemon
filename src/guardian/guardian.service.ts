@@ -29,6 +29,8 @@ import {
 } from 'common/prometheus';
 import { Counter, Gauge, Histogram } from 'prom-client';
 import { APP_NAME, APP_VERSION } from 'app.constants';
+import { validaitor } from '../contracts/registry/interfaces';
+import { BigNumber } from 'ethers';
 
 @Injectable()
 export class GuardianService implements OnModuleInit {
@@ -188,15 +190,18 @@ export class GuardianService implements OnModuleInit {
     const { depositedEvents, nextSigningKeys } = blockData;
     const { depositRoot, keysOpIndex } = blockData;
 
-    let nextSigningKey: string;
-    let nextSignKeyWIthIndexs: DepositData[] = [];
-    let startIndex = keysOpIndex;
+    let nextSigningKey: validaitor;
+    const nextSignKeyWIthIndexs: DepositData[] = [];
     for (nextSigningKey of nextSigningKeys) {
-      nextSignKeyWIthIndexs.push({ pubKey: nextSigningKey, index: startIndex });
-      startIndex++;
+      nextSignKeyWIthIndexs.push({
+        pubKey: nextSigningKey.pubKey,
+        index: nextSigningKey.index,
+      });
     }
 
-    const nextSigningKeysSet = new Set(nextSigningKeys);
+    const nextSigningKeysSet = new Set(
+      nextSigningKeys.map((obj) => obj.pubKey),
+    );
 
     let intersections = depositedEvents.events.filter(({ pubkey }) =>
       nextSigningKeysSet.has(pubkey),
@@ -209,7 +214,7 @@ export class GuardianService implements OnModuleInit {
       intersections.map((obj) => obj.pubkey),
     );
     const a = intersections.map((obj) => obj.pubkey);
-    this.logger.warn('nextSignKeyWIthIndexs is :', { nextSignKeyWIthIndexs });
+    this.logger.warn('intersections is :', { intersections });
     const depositDatas: DepositData[] = nextSignKeyWIthIndexs.filter(
       ({ pubKey }) => intersectionsPubKeySet.has(pubKey),
     );
@@ -280,11 +285,11 @@ export class GuardianService implements OnModuleInit {
     } = blockData;
     const contract = await this.securityService.getDawnDepositContract();
     for (const index of indexes) {
-      const slashAmount = await contract.getPEthByEther(2e18);
+      const slashAmount = await contract.getPEthByEther('2000000000000000000');
       const signature = await this.securityService.signPauseData(
         blockNumber,
         index,
-        slashAmount.toNumber(),
+        slashAmount.toBigInt(),
       );
       const pauseMessage: MessagePause = {
         type: MessageType.PAUSE,
@@ -292,7 +297,7 @@ export class GuardianService implements OnModuleInit {
         guardianIndex,
         blockNumber,
         index,
-        slashAmount: slashAmount.toNumber(),
+        slashAmount: slashAmount.toString(),
         signature,
       };
       // call without waiting for completion
@@ -300,7 +305,7 @@ export class GuardianService implements OnModuleInit {
         .pauseAKeyDeposits(
           blockNumber,
           index,
-          slashAmount.toNumber(),
+          slashAmount.toBigInt(),
           signature,
         )
         .catch((error) => this.logger.error(error));

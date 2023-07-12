@@ -141,7 +141,7 @@ export class WalletService implements OnModuleInit {
     prefix: string,
     blockNumber: number,
     index: number,
-    slashAmount: number,
+    slashAmount: bigint,
   ): Promise<Signature> {
     const encodedData = solidityPack(
       ['bytes32', 'uint256', 'uint256', 'uint256'],

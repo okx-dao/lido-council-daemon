@@ -18,4 +18,5 @@ export interface validaitor {
   state: number;
   operator: string;
   pubKey: string;
+  index: number;
 }

@@ -301,7 +301,7 @@ export class SecurityService implements OnModuleInit {
   public async signPauseData(
     blockNumber: number,
     index: number,
-    slashAmount: number,
+    slashAmount: bigint,
   ): Promise<Signature> {
     const messagePrefix = await this.getPauseMessagePrefix();
 
@@ -328,7 +328,7 @@ export class SecurityService implements OnModuleInit {
   public async pauseAKeyDeposits(
     blocknumber: number,
     index: number,
-    slashAmount: number,
+    slashAmount: bigint,
     signature: Signature,
   ): Promise<ContractReceipt | void> {
     this.logger.warn('Try to pause deposits');
