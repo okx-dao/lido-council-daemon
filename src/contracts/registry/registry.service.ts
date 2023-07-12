@@ -26,6 +26,7 @@ import {
   NodeOperatorsCache,
   NodeOperatorsKey,
   NodeOperatorWithKeys,
+  validaitor,
 } from './interfaces';
 import { range, splitPubKeys } from 'utils';
 import { CacheService } from 'cache';
@@ -173,14 +174,20 @@ export class RegistryService implements OnModuleInit {
     const { operators, pubkeys, statuses } =
       await contract.callStatic.getNodeValidators(0, 0);
     let num = 0;
-    let states: any;
-    for (states in statuses) {
-      if (states == 1) {
-        break;
+    let state: any;
+    const validatorList: validaitor[] = [];
+    for (state of statuses) {
+      if (state !== 1) {
+        continue;
       }
+      validatorList.push({
+        operator: operators[num],
+        pubKey: pubkeys[num],
+        state: state,
+      });
       num++;
     }
-    return pubkeys.slice(num, pubkeys.length);
+    return validatorList.map((obj) => obj.pubKey);
   }
 
   /**
@@ -191,8 +198,7 @@ export class RegistryService implements OnModuleInit {
     const contract = await this.getValidatorKeyContract();
     const { pubkeys, statuses } = await contract.getNodeValidators(0, 0);
     let num = 0;
-    let states: any;
-    for (states in statuses) {
+    for (const states of statuses) {
       if (states == 1) {
         break;
       }

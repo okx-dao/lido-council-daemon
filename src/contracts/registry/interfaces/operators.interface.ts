@@ -14,3 +14,8 @@ export interface NodeOperator {
 export interface NodeOperatorWithKeys extends NodeOperator {
   keys: NodeOperatorsKey[];
 }
+export interface validaitor {
+  state: number;
+  operator: string;
+  pubKey: string;
+}

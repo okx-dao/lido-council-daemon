@@ -165,13 +165,13 @@ export class GuardianService implements OnModuleInit {
     // const intersections = nextKeysIntersections.concat(cachedKeysIntersections);
     const isIntersectionsFound = nextKeysIntersectionsIndex.length > 0;
 
-    if (blockData.isNotEnough) {
-      this.logger.warn('Deposits are not enough');
-      return;
-    }
     if (isIntersectionsFound) {
       await this.handleKeysIntersections(blockData, nextKeysIntersectionsIndex);
     } else {
+      if (blockData.isNotEnough) {
+        this.logger.warn('Deposits are not enough');
+        return;
+      }
       await this.handleCorrectKeys(blockData);
     }
   }
@@ -191,7 +191,7 @@ export class GuardianService implements OnModuleInit {
     let nextSigningKey: string;
     let nextSignKeyWIthIndexs: DepositData[] = [];
     let startIndex = keysOpIndex;
-    for (nextSigningKey in nextSigningKeys) {
+    for (nextSigningKey of nextSigningKeys) {
       nextSignKeyWIthIndexs.push({ pubKey: nextSigningKey, index: startIndex });
       startIndex++;
     }
@@ -209,12 +209,12 @@ export class GuardianService implements OnModuleInit {
       intersections.map((obj) => obj.pubkey),
     );
     const a = intersections.map((obj) => obj.pubkey);
-    this.logger.warn('intersectionsPubKeySet is :', { a });
+    this.logger.warn('nextSignKeyWIthIndexs is :', { nextSignKeyWIthIndexs });
     const depositDatas: DepositData[] = nextSignKeyWIthIndexs.filter(
       ({ pubKey }) => intersectionsPubKeySet.has(pubKey),
     );
 
-    if (intersections.length) {
+    if (depositDatas.length) {
       this.logger.warn('Already deposited keys found in the next Lido keys', {
         depositRoot,
         keysOpIndex,
@@ -278,11 +278,6 @@ export class GuardianService implements OnModuleInit {
       isNotEnough,
       keysOpIndex,
     } = blockData;
-
-    if (isNotEnough) {
-      this.logger.warn('Deposits are already paused');
-      return;
-    }
 
     for (const index of indexes) {
       const signature = await this.securityService.signPauseData(
