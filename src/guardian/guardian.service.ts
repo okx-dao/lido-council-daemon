@@ -278,12 +278,13 @@ export class GuardianService implements OnModuleInit {
       isNotEnough,
       keysOpIndex,
     } = blockData;
-
+    const contract = await this.securityService.getDawnDepositContract();
     for (const index of indexes) {
+      const slashAmount = await contract.getPEthByEther(2e18);
       const signature = await this.securityService.signPauseData(
         blockNumber,
         index,
-        0,
+        slashAmount.toNumber(),
       );
       const pauseMessage: MessagePause = {
         type: MessageType.PAUSE,
@@ -291,12 +292,17 @@ export class GuardianService implements OnModuleInit {
         guardianIndex,
         blockNumber,
         index,
-        slashAmount: 0,
+        slashAmount: slashAmount.toNumber(),
         signature,
       };
       // call without waiting for completion
       this.securityService
-        .pauseAKeyDeposits(blockNumber, index, 0, signature)
+        .pauseAKeyDeposits(
+          blockNumber,
+          index,
+          slashAmount.toNumber(),
+          signature,
+        )
         .catch((error) => this.logger.error(error));
       this.logger.warn('Suspicious case detected');
       await this.sendMessageFromGuardian(pauseMessage);
